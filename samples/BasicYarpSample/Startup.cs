@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using BasicYARPSample.Validator;
+using FluentValidation;
+using Yarp.ReverseProxy.Infrastructure;
+using Yarp.ReverseProxy.Infrastructure.Entity;
+using Yarp.ReverseProxy.Infrastructure.Management;
 
 namespace BasicYARPSample
 {
@@ -21,10 +21,25 @@ namespace BasicYARPSample
         // the web application via services in the DI container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors();
+            services.AddMemoryCache();
+
+            services.AddSingleton<IValidator<Cluster>, ClusterValidator>();
+            services.AddSingleton<IValidator<ProxyRoute>, ProxyRouteValidator>();
+            // 
+            Yarp.ReverseProxy.Infrastructure.Dependencies.ConfigureServices(Configuration, services);
+
+            services.AddTransient<IClusterManagement, ClusterManagement>();
+            services.AddTransient<IProxyRouteManagement, ProxyRouteManagement>();
+
             // Add the reverse proxy capability to the server
             var proxyBuilder = services.AddReverseProxy();
+
             // Initialize the reverse proxy from the "ReverseProxy" section of configuration
-            proxyBuilder.LoadFromConfig(Configuration.GetSection("ReverseProxy"));
+            //proxyBuilder.LoadFromConfig(Configuration.GetSection("ReverseProxy"));
+
+            proxyBuilder.LoadFromEFCore();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request 
